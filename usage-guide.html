@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Analyzer & Meta — 使用教程</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <style>
+    /* ═══ Design System: fioutput Report Mode (Navy) ═══ */
+    :root {
+      --c-primary: #051C2C;
+      --c-accent: #051C2C;
+      --c-surface: #F2F2F2;
+      --c-text: #333333;
+      --c-muted: #666666;
+      --c-bg: #FFFFFF;
+      --c-positive: #2E8B57;
+      --c-negative: #C0392B;
+      --c-warning: #E67E22;
+      --c-line: #CCCCCC;
+      --c-series-1: #051C2C;
+      --c-series-2: #C0392B;
+      --c-series-3: #5B9BD5;
+      --c-series-4: #70AD47;
+      --c-series-5: #FFC000;
+      --c-series-6: #ED7D31;
+      --c-series-7: #A5A5A5;
+      --c-series-8: #9B59B6;
+      --font-family: 'Georgia', 'STSong', 'SimSun', serif;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-family);
+      color: var(--c-text);
+      background: var(--c-bg);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Report Container ── */
+    .rpt-container { max-width: 1126px; margin: 0 auto; padding: 48px 64px; }
+    @media (max-width: 899px) { .rpt-container { padding: 24px 20px; } }
+
+    /* ── Header ── */
+    .rpt-header { border-bottom: 2px solid var(--c-primary); padding: 0 0 24px 0; margin-bottom: 40px; }
+    .rpt-header h1 { font-size: 28px; font-weight: 700; margin: 0 0 6px 0; color: var(--c-primary); }
+    .rpt-subtitle { color: var(--c-muted); font-size: 13px; }
+    .rpt-date-badge { display: inline-block; font-size: 12px; color: var(--c-muted); margin-left: 8px; }
+    .rpt-meta-row { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 12px; font-size: 12px; color: var(--c-text); }
+    .rpt-meta-row b { color: var(--c-primary); font-weight: 700; }
+
+    /* ── Stats Cards ── */
+    .rpt-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 32px; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 1px solid var(--c-line); }
+    .rpt-stat-card { text-align: left; }
+    .rpt-stat-value { font-size: 40px; font-weight: 700; margin-bottom: 4px; color: var(--c-primary); line-height: 1.1; }
+    .rpt-stat-label { font-size: 12px; color: var(--c-muted); }
+    .rpt-stat-sub { font-size: 11px; color: var(--c-muted); margin-top: 2px; }
+    .rpt-stat-card.accent .rpt-stat-value { color: var(--c-series-3); }
+
+    /* ── Strategy Box ── */
+    .rpt-strategy-box { background: var(--c-surface); border-left: 4px solid var(--c-primary); padding: 24px 32px; margin-bottom: 40px; }
+    .rpt-strategy-box h3 { color: var(--c-primary); margin: 0 0 16px 0; font-size: 18px; font-weight: 700; }
+    .rpt-strategy-box ul { list-style: none; padding: 0; margin: 0; }
+    .rpt-strategy-box li { padding: 8px 0 8px 16px; position: relative; font-size: 14px; line-height: 1.8; }
+    .rpt-strategy-box li::before { content: '—'; position: absolute; left: 0; color: var(--c-muted); font-size: 12px; top: 8px; }
+    .rpt-strategy-box li b { color: var(--c-primary); font-weight: 700; }
+
+    /* ── Tabs ── */
+    .rpt-tabs { display: flex; flex-wrap: wrap; gap: 32px; margin-bottom: 32px; border-bottom: 1px solid var(--c-line); }
+    .rpt-tab-btn { background: transparent; border: none; color: var(--c-muted); padding: 12px 0; cursor: pointer; font-size: 14px; font-family: inherit; margin-bottom: -1px; }
+    .rpt-tab-btn:hover { color: var(--c-text); }
+    .rpt-tab-btn.active { color: var(--c-primary); border-bottom: 2px solid var(--c-primary); font-weight: 700; }
+    .rpt-tab-content { display: none; }
+    .rpt-tab-content.active { display: block; }
+
+    /* ── Section ── */
+    .rpt-section { margin-bottom: 48px; }
+    .rpt-section h2 { font-size: 22px; font-weight: 700; color: var(--c-primary); border-bottom: 1px solid var(--c-line); padding-bottom: 12px; margin: 0 0 24px 0; }
+    .rpt-section h3 { font-size: 16px; font-weight: 700; color: var(--c-primary); margin: 28px 0 12px 0; }
+    .rpt-section p { font-size: 14px; line-height: 1.9; margin: 0 0 16px 0; }
+
+    /* ── Tables ── */
+    .rpt-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+    .rpt-table th { background: transparent; color: var(--c-text); padding: 10px 12px; text-align: left; font-weight: 700; border-bottom: 2px solid var(--c-text); }
+    .rpt-table td { padding: 10px 12px; border-bottom: 1px solid var(--c-line); vertical-align: top; }
+    .rpt-table .total-row { font-weight: 700; border-top: 2px solid var(--c-text); }
+
+    /* ── Callout Boxes ── */
+    .callout { padding: 16px 20px; margin: 20px 0; border-left: 4px solid var(--c-series-3); background: color-mix(in srgb, var(--c-series-3) 6%, white); font-size: 13px; line-height: 1.7; }
+    .callout.tip { border-left-color: var(--c-positive); background: color-mix(in srgb, var(--c-positive) 6%, white); }
+    .callout.warning { border-left-color: var(--c-warning); background: color-mix(in srgb, var(--c-warning) 6%, white); }
+    .callout.danger { border-left-color: var(--c-negative); background: color-mix(in srgb, var(--c-negative) 6%, white); }
+    .callout strong { display: block; margin-bottom: 6px; color: var(--c-primary); }
+
+    /* ── Code Blocks ── */
+    .code-block { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; margin: 16px 0; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; overflow-x: auto; white-space: pre; }
+    .code-block .comment { color: #6a9955; }
+    .code-block .keyword { color: #569cd6; }
+    .code-block .string { color: #ce9178; }
+
+    /* ── Step Cards ── */
+    .step-cards { display: grid; gap: 24px; margin: 24px 0; }
+    .step-card { border: 1px solid var(--c-line); padding: 24px; position: relative; }
+    .step-card::before { content: attr(data-step); position: absolute; top: -12px; left: 20px; background: var(--c-primary); color: white; font-size: 11px; font-weight: 700; padding: 2px 10px; }
+    .step-card h4 { margin: 8px 0 12px 0; font-size: 15px; color: var(--c-primary); }
+    .step-card p { font-size: 13px; margin: 0 0 8px 0; }
+
+    /* ── Dialog Bubbles ── */
+    .dialog { margin: 24px 0; }
+    .dialog-row { display: flex; margin-bottom: 16px; gap: 12px; }
+    .dialog-row.ai { flex-direction: row; }
+    .dialog-row.user { flex-direction: row-reverse; }
+    .dialog-avatar { width: 32px; height: 32px; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .dialog-row.ai .dialog-avatar { background: var(--c-primary); color: white; }
+    .dialog-row.user .dialog-avatar { background: var(--c-surface); color: var(--c-primary); border: 1px solid var(--c-line); }
+    .dialog-bubble { max-width: 75%; padding: 14px 18px; font-size: 13px; line-height: 1.7; }
+    .dialog-row.ai .dialog-bubble { background: var(--c-surface); }
+    .dialog-row.user .dialog-bubble { background: color-mix(in srgb, var(--c-primary) 8%, white); border: 1px solid var(--c-line); }
+
+    /* ── Agent Grid ── */
+    .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin: 24px 0; }
+    .agent-card { border: 1px solid var(--c-line); padding: 16px 20px; }
+    .agent-card .agent-id { font-size: 11px; font-weight: 700; color: var(--c-series-3); text-transform: uppercase; letter-spacing: 1px; }
+    .agent-card h4 { margin: 6px 0 8px 0; font-size: 14px; color: var(--c-primary); }
+    .agent-card p { font-size: 12px; margin: 0; color: var(--c-muted); line-height: 1.6; }
+    .agent-card .agent-io { margin-top: 10px; font-size: 11px; color: var(--c-text); }
+    .agent-card .agent-io b { color: var(--c-primary); }
+
+    /* ── Chart Container ── */
+    .chart-container { width: 100%; height: 420px; margin: 24px 0; }
+    .chart-container.tall { height: 520px; }
+
+    /* ── Footer ── */
+    .rpt-footer { border-top: 1px solid var(--c-line); padding-top: 20px; margin-top: 60px; font-size: 11px; color: var(--c-muted); text-align: center; }
+
+    /* ── TOC ── */
+    .toc { background: var(--c-surface); padding: 24px 32px; margin-bottom: 40px; }
+    .toc h3 { margin: 0 0 16px 0; font-size: 14px; color: var(--c-primary); }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 13px; padding: 4px 0; }
+    .toc a { color: var(--c-primary); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Misc ── */
+    .source-text { font-size: 11px; color: var(--c-muted); margin-top: 12px; }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border: 1px solid var(--c-line); color: var(--c-muted); margin-left: 8px; }
+    .highlight { color: var(--c-primary); font-weight: 700; }
+    .divider { border: none; border-top: 1px solid var(--c-line); margin: 40px 0; }
+  </style>
+</head>
+<body>
+<div class="rpt-container">
+
+  <!-- ═══════════════════════ HEADER ═══════════════════════ -->
+  <div class="rpt-header">
+    <h1>Financial Analyzer & Meta <span class="rpt-date-badge">使用教程 v1.0</span></h1>
+    <div class="rpt-subtitle">从 PDF 财报到深度信用分析报告 — 手把手实操指南</div>
+    <div class="rpt-meta-row">
+      <span><b>适用对象</b> 固收分析师 / 信评研究员</span>
+      <span><b>前置要求</b> 任意 AI Agent + MinerU API</span>
+      <span><b>阅读时间</b> ~20 分钟</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ STATS ═══════════════════════ -->
+  <div class="rpt-stats-row">
+    <div class="rpt-stat-card">
+      <div class="rpt-stat-value">14</div>
+      <div class="rpt-stat-label">AI Agent 协作</div>
+      <div class="rpt-stat-sub">各司其职，流水线作业</div>
+    </div>
+    <div class="rpt-stat-card accent">
+      <div class="rpt-stat-value">5</div>
+      <div class="rpt-stat-label">分析阶段</div>
+      <div class="rpt-stat-sub">提取→底稿→分析→报告→进化</div>
+    </div>
+    <div class="rpt-stat-card">
+      <div class="rpt-stat-value">13</div>
+      <div class="rpt-stat-label">知识库维度</div>
+      <div class="rpt-stat-sub">偿债/盈利/现金流/杠杆/EBITDA…</div>
+    </div>
+    <div class="rpt-stat-card accent">
+      <div class="rpt-stat-value">4</div>
+      <div class="rpt-stat-label">行业模板</div>
+      <div class="rpt-stat-sub">城投 / 产业 / 地产 / 港股</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ TOC ═══════════════════════ -->
+  <div class="toc">
+    <h3>目录</h3>
+    <ol>
+      <li><a href="#ch1">全景概览：两个 Skill 是什么</a></li>
+      <li><a href="#ch2">环境准备：5 分钟完成配置</a></li>
+      <li><a href="#ch3">首次定制：Onboarding 对话</a></li>
+      <li><a href="#ch4">全流程实操：从 PDF 到报告</a></li>
+      <li><a href="#ch5">14 Agent 详解</a></li>
+      <li><a href="#ch6">知识库进化机制</a></li>
+      <li><a href="#ch7">进阶用法 & FAQ</a></li>
+    </ol>
+  </div>
+
+  <!-- ═══════════════════════ CH1: 全景概览 ═══════════════════════ -->
+  <div class="rpt-section" id="ch1">
+    <h2>1. 全景概览：两个 Skill 是什么</h2>
+
+    <h3>你想解决什么问题？</h3>
+    <p>作为信评研究员，你每天要面对几十份 PDF 财报（动辄 200+ 页），手动提取数据、计算指标、撰写分析——耗时且容易遗漏。这两个 Skill 就是为此而生：</p>
+
+    <table class="rpt-table">
+      <thead>
+        <tr><th></th><th>financial-analyzer</th><th>meta-financial-analyzer</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>一句话定位</b></td>
+          <td>通用财务分析执行引擎</td>
+          <td>定制训练引擎（母 Skill）</td>
+        </tr>
+        <tr>
+          <td><b>做什么</b></td>
+          <td>14 Agent × 5 阶段，把财报 PDF 变成深度分析报告</td>
+          <td>通过对话了解你的需求，生成专属分析规则，再指挥执行引擎干活</td>
+        </tr>
+        <tr>
+          <td><b>产出</b></td>
+          <td>analysis_report.md + workbook_master.xlsx</td>
+          <td>client_rules.md（你的专属规则）→ 驱动执行</td>
+        </tr>
+        <tr>
+          <td><b>知识库</b></td>
+          <td>通用 13 维度（v2.6.1）</td>
+          <td>通用 + 你的定制层（阈值/优先级/IF-THEN）</td>
+        </tr>
+        <tr>
+          <td><b>门禁</b></td>
+          <td>无，给数据就能跑</td>
+          <td>出厂 = TEMPLATE，<b>未完成定制禁止执行</b></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout tip">
+      <strong>类比理解</strong>
+      financial-analyzer 是"通用分析工人"——给他财报，他按标准流程出报告。<br>
+      meta-financial-analyzer 是"培训师 + 调度员"——先问清你要什么风格、关注什么指标、什么阈值触发预警，然后训练工人按你的规矩干活。
+    </div>
+
+    <h3>架构关系</h3>
+    <div class="chart-container" id="chart-arch"></div>
+    <p class="source-text">meta 自包含了 financial-analyzer 的全部代码和知识库（modules/financial_analyzer/），不是"引用"而是"包裹"。</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════ CH2: 环境准备 ═══════════════════════ -->
+  <div class="rpt-section" id="ch2">
+    <h2>2. 环境准备：5 分钟完成配置</h2>
+
+    <h3>你需要准备什么？</h3>
+    <table class="rpt-table">
+      <thead>
+        <tr><th>项目</th><th>说明</th><th>获取方式</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>AI Agent 环境</b></td>
+          <td>任意 AI Agent（WorkBuddy、VS Code + Copilot 等）</td>
+          <td>已安装即可，其余依赖 Agent 自动安装</td>
+        </tr>
+        <tr>
+          <td><b>MinerU API Token</b></td>
+          <td>PDF 智能解析引擎（VLM 识别表格/公式）</td>
+          <td>mineru.net 注册获取</td>
+        </tr>
+        <tr>
+          <td><b>Python 3.10+</b></td>
+          <td>脚本执行环境</td>
+          <td><a href="https://www.python.org/downloads/" target="_blank" style="color:var(--c-primary)">python.org</a> 下载，python --version 确认</td>
+        </tr>
+        <tr>
+          <td><b>输出目录</b></td>
+          <td>存放分析产出（建议 D:\output\）</td>
+          <td>手动创建</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>验证清单</h3>
+    <p>在 AI Agent 对话框中输入以下内容，Agent 会自动帮你检查：</p>
+    <div class="code-block"><span class="comment"># 对 AI 说：</span>
+<span class="string">"帮我检查财务分析环境是否就绪"</span>
+
+<span class="comment"># AI 会依次验证：</span>
+<span class="comment"># ✓ MinerU token 有效性</span>
+<span class="comment"># ✓ Python 版本 ≥ 3.10</span>
+<span class="comment"># ✓ 输出目录可写</span>
+<span class="comment"># ✓ 依赖包完整（openpyxl, requests 等）</span></div>
+
+    <div class="callout warning">
+      <strong>常见坑：MinerU Token 过期</strong>
+      MinerU 免费额度有限，token 可能失效。如果解析阶段报 401 错误，去 mineru.net 重新生成 token，更新到 <code>config.json</code> 的 <code>mineru_token</code> 字段。
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════ CH3: Onboarding ═══════════════════════ -->
+  <div class="rpt-section" id="ch3">
+    <h2>3. 首次定制：Onboarding 对话</h2>
+
+    <p>这是 meta-financial-analyzer 的<span class="highlight">核心环节</span>。首次使用时，AI 不会直接跑分析，而是先跟你聊 4 轮，搞清楚你的需求：</p>
+
+    <div class="step-cards">
+      <div class="step-card" data-step="第 0 轮">
+        <h4>环境验证</h4>
+        <p>AI 自动检查 MinerU token、Python 依赖、代理、输出目录。全部通过才进入下一轮。</p>
+        <p><b>你需要做：</b>无，等待即可。</p>
+      </div>
+      <div class="step-card" data-step="第 1 轮">
+        <h4>定位：你是谁？</h4>
+        <p>AI 会问你的行业（城投/产业/地产/港股）、角色（信评/投资/风控）、覆盖主体数量、分析频率。</p>
+        <p><b>你需要做：</b>用自然语言描述，比如"我做城投信评，覆盖 80 个省级+市级平台，每周分析 3-5 份"。</p>
+      </div>
+      <div class="step-card" data-step="第 2 轮">
+        <h4>深挖：你关注什么？</h4>
+        <p>AI 追问指标优先级（融资成本 > 偿债 > 现金流？）、风险阈值（资产负债率多少算预警？）、行业特殊规则。</p>
+        <p><b>你需要做：</b>给出你的判断标准，比如"资产负债率 > 65% 关注，> 75% 预警，> 85% 禁用"。</p>
+        <p><b>深度定制：</b>你还可以投喂自己的过往评级报告、知识笔记、调研纪要等材料。AI 会从中提取你的分析框架、行文风格、关注重点，将其融入知识库，让后续分析完全贴合你的方法论。</p>
+      </div>
+      <div class="step-card" data-step="第 3 轮">
+        <h4>固化：确认规则</h4>
+        <p>AI 把你的回答整理成 <code>client_rules.md</code>，逐条念给你确认。确认后状态从 TEMPLATE → ACTIVE。</p>
+        <p><b>你需要做：</b>审阅确认，或要求修改某条。</p>
+      </div>
+    </div>
+
+    <h3>对话示例（城投分析师）</h3>
+    <div class="dialog">
+      <div class="dialog-row ai">
+        <div class="dialog-avatar">AI</div>
+        <div class="dialog-bubble">你好！我是你的财务分析定制引擎。在开始之前，我想先了解你的工作场景。你主要分析哪类主体？覆盖多少个？频率如何？</div>
+      </div>
+      <div class="dialog-row user">
+        <div class="dialog-avatar">你</div>
+        <div class="dialog-bubble">我做城投信评，主要看省级和市级平台，大概覆盖 80 个主体。每周分析 3-5 份年报或半年报。</div>
+      </div>
+      <div class="dialog-row ai">
+        <div class="dialog-avatar">AI</div>
+        <div class="dialog-bubble">明白了。城投平台的话，你最看重哪些维度？比如融资成本、偿债能力、现金流、盈利能力——你会怎么排优先级？另外，资产负债率到什么水平你会开始警惕？</div>
+      </div>
+      <div class="dialog-row user">
+        <div class="dialog-avatar">你</div>
+        <div class="dialog-bubble">融资成本最重要，其次是偿债和现金流。盈利对城投意义不大。资产负债率 65% 以上关注，75% 预警，85% 以上基本不碰。另外政府补助不能算核心盈利，互保链必须穿透。</div>
+      </div>
+      <div class="dialog-row ai">
+        <div class="dialog-avatar">AI</div>
+        <div class="dialog-bubble">收到。我整理一下你的规则：<br><br>
+        ① 优先级：融资成本 > 偿债 > 现金流 > 盈利<br>
+        ② 阈值：资产负债率 65%/75%/85% 三档<br>
+        ③ 特殊规则：政府补助不计核心盈利；互保链须穿透<br><br>
+        还有补充吗？确认后我就生成你的专属规则文件。</div>
+      </div>
+    </div>
+
+    <h3>深度定制：投喂你的专属材料</h3>
+    <p>除了对话定制，你还可以向 AI 投喂自己的历史积累，让整个分析框架真正"像你一样思考"：</p>
+    <table class="rpt-table">
+      <thead><tr><th>可投喂材料</th><th>AI 从中提取什么</th><th>效果</th></tr></thead>
+      <tbody>
+        <tr><td><b>过往评级报告</b></td><td>你的分析框架、章节结构、措辞风格、结论逻辑</td><td>生成的报告贴合你的行文习惯</td></tr>
+        <tr><td><b>知识笔记 / 方法论</b></td><td>你总结的行业规律、特殊指标、判断标准</td><td>知识库叠加你的专属维度</td></tr>
+        <tr><td><b>调研纪要</b></td><td>你关注的定性因素（管理层态度、政府支持意愿等）</td><td>分析中自动纳入定性判断</td></tr>
+        <tr><td><b>内部信评模板</b></td><td>你所在机构的报告格式、必填字段、审批要求</td><td>产出直接符合内部规范</td></tr>
+        <tr><td><b>历史预警案例</b></td><td>你踩过的坑、识别过的风险信号</td><td>IF-THEN 规则更精准</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <strong>投喂方式</strong>
+      直接把文件发给 AI，说"学习这份报告的分析框架"或"把这个笔记里的指标加入知识库"。AI 会解析内容、提取规则、写入 <code>knowledge_base.json</code> 和 <code>client_rules.md</code>，下次分析立即生效。
+    </div>
+
+    <div class="callout">
+      <strong>定制完成后</strong>
+      规则保存在 <code>config/client_rules.md</code>，首行标记 <code>CUSTOMIZATION_STATUS: ACTIVE</code>。之后每次分析都会自动注入这些规则。想改？直接说"把资产负债率预警线改成 70%"即可。
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════ CH4: 全流程实操 ═══════════════════════ -->
+  <div class="rpt-section" id="ch4">
+    <h2>4. 全流程实操：从 PDF 到报告</h2>
+
+    <p>定制完成后，你只需说一句<span class="highlight">"分析 XX 公司 2024 年报"</span>，AI 就会自动跑完 5 个阶段：</p>
+
+    <div class="chart-container tall" id="chart-pipeline"></div>
+
+    <div class="rpt-tabs">
+      <button class="rpt-tab-btn active" onclick="switchTab(0)">阶段 0-2：获取与解析</button>
+      <button class="rpt-tab-btn" onclick="switchTab(1)">阶段 3：14 Agent 分析</button>
+      <button class="rpt-tab-btn" onclick="switchTab(2)">阶段 4：报告与进化</button>
+    </div>
+
+    <!-- Tab 1 -->
+    <div class="rpt-tab-content active">
+      <h3>阶段 0：初始化</h3>
+      <p>AI 读取你的 <code>client_rules.md</code>，确认分析参数（主体名、报告期、行业模板）。</p>
+
+      <h3>阶段 1：下载财报</h3>
+      <p>多源路由自动寻找 PDF：</p>
+      <table class="rpt-table">
+        <thead><tr><th>数据源</th><th>覆盖</th><th>优先级</th></tr></thead>
+        <tbody>
+          <tr><td>中国货币网 (chinamoney)</td><td>银行间市场发债主体</td><td>最高</td></tr>
+          <tr><td>巨潮资讯 (cninfo)</td><td>A 股上市公司</td><td>次高</td></tr>
+          <tr><td>港交所 (hkex)</td><td>港股上市公司</td><td>港股专用</td></tr>
+          <tr><td>本地缓存</td><td>已下载过的 PDF</td><td>优先复用</td></tr>
+        </tbody>
+      </table>
+
+      <h3>阶段 2：MinerU 智能解析</h3>
+      <p>PDF → Markdown，VLM 引擎识别表格结构、公式、页眉页脚。</p>
+
+      <div class="callout danger">
+        <strong>200 页分段陷阱</strong>
+        MinerU 单次最多处理 200 页。超过的财报会被自动分段解析再合并。如果你看到输出目录有 <code>_part1.md</code>、<code>_part2.md</code>，说明触发了分段——AI 会自动合并，无需手动干预。
+      </div>
+
+      <p><b>你会看到：</b>输出目录出现 <code>parsed_report.md</code>（完整的 Markdown 财报）。</p>
+    </div>
+
+    <!-- Tab 2 -->
+    <div class="rpt-tab-content">
+      <h3>阶段 3：14 Agent 流水线分析</h3>
+      <p>这是核心环节，14 个 Agent 分 5 个子阶段依次执行：</p>
+
+      <table class="rpt-table">
+        <thead><tr><th>子阶段</th><th>Agent</th><th>做什么</th><th>产出</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="1"><b>提取总结</b></td><td>Agent-01</td><td>扫描附注，生成章节地图</td><td>section_map.json</td></tr>
+          <tr><td rowspan="5"><b>制作底稿</b></td><td>Agent-02</td><td>三大主表提取</td><td>agent02_main_statements.xlsx</td></tr>
+          <tr><td>Agent-03</td><td>资产类附注</td><td>agent03_asset_notes.xlsx</td></tr>
+          <tr><td>Agent-04</td><td>负债权益附注</td><td>agent04_liability_equity_notes.xlsx</td></tr>
+          <tr><td>Agent-05</td><td>损益及其他附注</td><td>agent05_profit_loss_other_notes.xlsx</td></tr>
+          <tr><td>Agent-06</td><td>合并 + 勾稽校验</td><td>workbook_master.xlsx</td></tr>
+          <tr><td rowspan="6"><b>指标 + 分析</b></td><td>Agent-07</td><td>知识库 × 底稿 → 指标体系</td><td>indicator_framework.json</td></tr>
+          <tr><td>Agent-08</td><td>偿债能力深度分析</td><td>—</td></tr>
+          <tr><td>Agent-09</td><td>盈利与运营分析</td><td>—</td></tr>
+          <tr><td>Agent-10</td><td>现金流与杠杆分析</td><td>—</td></tr>
+          <tr><td>Agent-11</td><td>有息债务 + 融资成本</td><td>—</td></tr>
+          <tr><td>Agent-12</td><td>合并 + 交叉验证</td><td>workbook_analysis.xlsx</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>关键公式：融资成本（现金口径）</strong>
+        <code>(付息支出 - 付息现金流 - 股东分红) / 平均有息债务</code><br>
+        这是 Agent-11 的强制公式，不允许用简化版（利息支出/有息债务）。
+      </div>
+
+      <p><b>你会看到：</b>输出目录出现 <code>workbook_master.xlsx</code>（数据底稿）和 <code>workbook_analysis.xlsx</code>（分析底稿），所有派生指标都是公式驱动，不是硬编码数字。</p>
+    </div>
+
+    <!-- Tab 3 -->
+    <div class="rpt-tab-content">
+      <h3>阶段 3 续 + 阶段 4：报告生成</h3>
+      <p><b>Agent-13</b> 逐章撰写深度分析报告，覆盖 8 大维度：</p>
+      <table class="rpt-table">
+        <thead><tr><th>#</th><th>维度</th><th>核心问题</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>总览与基本信息</td><td>这家主体是谁？做什么？</td></tr>
+          <tr><td>2</td><td>利润与盈利质量</td><td>赚钱能力如何？利润含金量？</td></tr>
+          <tr><td>3</td><td>现金流与短债</td><td>现金够不够还短期债务？</td></tr>
+          <tr><td>4</td><td>债务与资本结构</td><td>杠杆多高？债务结构合理吗？</td></tr>
+          <tr><td>5</td><td>存货与资产质量</td><td>资产有没有水分？</td></tr>
+          <tr><td>6</td><td>受限资金、担保、或有事项</td><td>有没有隐性风险？</td></tr>
+          <tr><td>7</td><td>管理层支持与持续经营</td><td>股东/政府会不会兜底？</td></tr>
+          <tr><td>8</td><td>专题修正项</td><td>行业特殊问题（如城投互保链）</td></tr>
+        </tbody>
+      </table>
+
+      <h3>阶段 5：知识库更新</h3>
+      <p><b>Agent-14</b> 把本次分析中发现的新指标、新阈值、新规则增量写入知识库。下次分析会更深入。</p>
+
+      <div class="callout tip">
+        <strong>最终产出</strong>
+        <code>analysis_report.md</code> — 完整的深度分析报告（通常 8000-15000 字）<br>
+        <code>workbook_analysis.xlsx</code> — 全部指标的数据底稿（公式可追溯）<br>
+        <code>knowledge_delta.json</code> — 本次新增的知识条目
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════ CH5: 14 Agent 详解 ═══════════════════════ -->
+  <div class="rpt-section" id="ch5">
+    <h2>5. 14 Agent 详解</h2>
+    <p>每个 Agent 都有明确的输入、任务和输出。它们像流水线工人一样依次作业：</p>
+
+    <div class="agent-grid">
+      <div class="agent-card">
+        <div class="agent-id">Stage 1 · 提取总结</div>
+        <h4>Agent-01 附注扫描</h4>
+        <p>扫描 200+ 页 MD，识别哪些章节是"应收账款附注""借款附注"等，生成章节地图。</p>
+        <div class="agent-io"><b>输入：</b>parsed_report.md → <b>输出：</b>section_map.json</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 2 · 制作底稿</div>
+        <h4>Agent-02 主表提取</h4>
+        <p>从 MD 中提取资产负债表、利润表、现金流量表的标准科目数据。</p>
+        <div class="agent-io"><b>输入：</b>section_map + MD → <b>输出：</b>agent02_main_statements.xlsx</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 2 · 制作底稿</div>
+        <h4>Agent-03 资产类附注</h4>
+        <p>提取应收账款账龄、存货构成、固定资产折旧、无形资产等明细。</p>
+        <div class="agent-io"><b>输入：</b>section_map + MD → <b>输出：</b>agent03_asset_notes.xlsx</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 2 · 制作底稿</div>
+        <h4>Agent-04 负债权益附注</h4>
+        <p>提取借款明细（银行/债券/非标）、应付账款、所有者权益变动。</p>
+        <div class="agent-io"><b>输入：</b>section_map + MD → <b>输出：</b>agent04_liability_equity_notes.xlsx</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 2 · 制作底稿</div>
+        <h4>Agent-05 损益及其他</h4>
+        <p>提取收入构成、费用明细、政府补助、关联交易、担保事项。</p>
+        <div class="agent-io"><b>输入：</b>section_map + MD → <b>输出：</b>agent05_profit_loss_other_notes.xlsx</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 2 · 制作底稿</div>
+        <h4>Agent-06 合并校验</h4>
+        <p>把 02-05 的数据合并为 workbook_master，执行勾稽校验（资产=负债+权益等）。</p>
+        <div class="agent-io"><b>输入：</b>4 份 xlsx → <b>输出：</b>workbook_master.xlsx + merge_log.json</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 3 · 指标体系</div>
+        <h4>Agent-07 指标设计</h4>
+        <p>读取知识库 13 维度 × 底稿数据，设计本次分析的指标方案（含公式定义）。</p>
+        <div class="agent-io"><b>输入：</b>knowledge_base + workbook → <b>输出：</b>indicator_framework.json</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 3 · 深度分析</div>
+        <h4>Agent-08 偿债能力</h4>
+        <p>流动比率、速动比率、现金比率、短期偿债压力测试。六层分析深度。</p>
+        <div class="agent-io"><b>深度：</b>当期值→同比→环比→趋势→异常→情景</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 3 · 深度分析</div>
+        <h4>Agent-09 盈利与运营</h4>
+        <p>毛利率、净利率、ROA、ROE、应收账款周转、存货周转。</p>
+        <div class="agent-io"><b>城投特殊：</b>政府补助剥离后看核心盈利</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 3 · 深度分析</div>
+        <h4>Agent-10 现金流与杠杆</h4>
+        <p>经营现金流/短债、自由现金流、资产负债率、EBITDA 利息保障倍数。</p>
+        <div class="agent-io"><b>关键：</b>现金流是偿债的第一来源</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 3 · 深度分析</div>
+        <h4>Agent-11 有息债务 + 融资成本</h4>
+        <p>有息债务结构（银行/债券/非标占比）、期限分布、融资成本（现金口径强制公式）。</p>
+        <div class="agent-io"><b>公式：</b>(付息支出-付息现金流-分红)/平均有息债务</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 3 · 合并验证</div>
+        <h4>Agent-12 交叉验证</h4>
+        <p>合并 08-11 的分析结果，交叉验证一致性（如偿债指标与现金流结论是否矛盾）。</p>
+        <div class="agent-io"><b>输入：</b>4 份分析 → <b>输出：</b>workbook_analysis.xlsx</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 4 · 报告</div>
+        <h4>Agent-13 报告撰写</h4>
+        <p>逐章撰写 8 维度深度报告，引用底稿数据，标注证据等级（A/B/C 级）。</p>
+        <div class="agent-io"><b>产出：</b>analysis_report.md（8000-15000 字）</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-id">Stage 5 · 进化</div>
+        <h4>Agent-14 知识库更新</h4>
+        <p>比对本次发现与现有知识库，增量写入新指标/新阈值/新规则。</p>
+        <div class="agent-io"><b>产出：</b>knowledge_delta.json → 知识库 v2.6.x+1</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════ CH6: 知识库进化 ═══════════════════════ -->
+  <div class="rpt-section" id="ch6">
+    <h2>6. 知识库进化机制</h2>
+
+    <p>知识库是整个系统的"大脑"——Agent-07 设计指标时<span class="highlight">必须完整读取全部 13 维度</span>，不得自行发明指标。每分析一份财报，知识库就进化一次：</p>
+
+    <div class="chart-container" id="chart-knowledge"></div>
+
+    <h3>13 个知识维度</h3>
+    <table class="rpt-table">
+      <thead><tr><th>#</th><th>维度</th><th>对应 Agent</th><th>典型指标</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>偿债能力 (solvency)</td><td>Agent-08</td><td>流动比率、速动比率、现金比率</td></tr>
+        <tr><td>2</td><td>运营效率 (operation)</td><td>Agent-09</td><td>应收账款周转天数、存货周转率</td></tr>
+        <tr><td>3</td><td>盈利能力 (profitability)</td><td>Agent-09</td><td>毛利率、净利率、ROE</td></tr>
+        <tr><td>4</td><td>现金流 (cashflow)</td><td>Agent-10</td><td>经营现金流/短债、自由现金流</td></tr>
+        <tr><td>5</td><td>杠杆 (leverage)</td><td>Agent-10</td><td>资产负债率、权益乘数</td></tr>
+        <tr><td>6</td><td>有息债务 (IBD)</td><td>Agent-11</td><td>有息债务率、短期占比</td></tr>
+        <tr><td>7</td><td>EBITDA</td><td>Agent-10/11</td><td>EBITDA 利息保障倍数</td></tr>
+        <tr><td>8</td><td>现金分析</td><td>Agent-10</td><td>受限资金比例、现金覆盖率</td></tr>
+        <tr><td>9</td><td>勾稽校验</td><td>Agent-06</td><td>资产=负债+权益、现金流勾稽</td></tr>
+        <tr><td>10</td><td>港股规则</td><td>Agent-07</td><td>港股特殊披露处理</td></tr>
+        <tr><td>11</td><td>LGFV（城投）</td><td>Agent-09/11</td><td>政府补助剥离、互保链穿透</td></tr>
+        <tr><td>12</td><td>房地产</td><td>Agent-07</td><td>去化周期、受限资产、担保余额</td></tr>
+        <tr><td>13</td><td>数据质量</td><td>Agent-06/12</td><td>异常值检测、缺失处理</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>进化闭环</strong>
+      知识库完善 → 指标体系更丰富 → 分析更深入 → 发现新缺口 → 知识库再完善。<br>
+      目前已积累 11 个案例（从首例"余姚工业园区"到"万科 2025 半年报"），版本 v2.6.1。
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════ CH7: 进阶 & FAQ ═══════════════════════ -->
+  <div class="rpt-section" id="ch7">
+    <h2>7. 进阶用法 & FAQ</h2>
+
+    <h3>批量分析</h3>
+    <p>对 AI 说"批量分析以下主体：A 公司、B 公司、C 公司的 2024 年报"。每个主体独立执行完整 pipeline，最后输出批量对比表 + 预警列表。</p>
+
+    <div class="callout warning">
+      <strong>批量铁律</strong>
+      1 对 1 独立执行，严禁循环合并。每个主体有自己的 output 目录，互不干扰。
+    </div>
+
+    <h3>行业模板对比</h3>
+    <table class="rpt-table">
+      <thead><tr><th>模板</th><th>特有指标</th><th>适用主体</th></tr></thead>
+      <tbody>
+        <tr><td><b>通用 (general)</b></td><td>标准三表 + 基础比率</td><td>产业类企业</td></tr>
+        <tr><td><b>城投 (LGFV)</b></td><td>政府补助剥离、互保链、财政依赖度</td><td>省/市/区县级平台</td></tr>
+        <tr><td><b>房地产 (realestate)</b></td><td>去化周期、土地储备、预收/合同负债、净负债率</td><td>房地产开发商</td></tr>
+        <tr><td><b>港股</b></td><td>港股披露差异处理、港币/人民币换算</td><td>港股上市主体</td></tr>
+      </tbody>
+    </table>
+
+    <h3>常见问题</h3>
+    <table class="rpt-table">
+      <thead><tr><th>问题</th><th>原因</th><th>解决</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>MinerU 解析报 401</td>
+          <td>Token 过期或额度用完</td>
+          <td>去 mineru.net 重新生成 token</td>
+        </tr>
+        <tr>
+          <td>AI 拒绝执行分析</td>
+          <td>client_rules.md 仍为 TEMPLATE</td>
+          <td>先完成 Onboarding 对话</td>
+        </tr>
+        <tr>
+          <td>底稿勾稽不平</td>
+          <td>PDF 表格识别错误（合并单元格）</td>
+          <td>检查 merge_log.json 中的差异项，手动修正 MD</td>
+        </tr>
+        <tr>
+          <td>融资成本算出来异常高</td>
+          <td>有息债务口径不一致（含/不含应付债券）</td>
+          <td>确认用"现金口径"公式，检查分母是否包含全部有息债务</td>
+        </tr>
+        <tr>
+          <td>报告缺少某个维度</td>
+          <td>财报中确实没有相关披露</td>
+          <td>正常——Agent 会写"未抽取到"，不会编造数据</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>修改定制规则</h3>
+    <p>随时对 AI 说：</p>
+    <div class="code-block"><span class="string">"把资产负债率预警线从 75% 改成 70%"</span>
+<span class="string">"增加一条规则：如果非标占有息债务超过 30%，标记为高风险"</span>
+<span class="string">"把盈利能力的优先级调到最后一位"</span></div>
+    <p>AI 会直接更新 <code>client_rules.md</code>，下次分析立即生效。</p>
+  </div>
+
+  <!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+  <div class="rpt-footer">
+    Financial Analyzer & Meta 使用教程 · 基于 fioutput Report 设计体系 · 2026-07-30
+  </div>
+
+</div>
+
+<script>
+/* ═══ ECharts 全局管理 ═══ */
+var _charts = [];
+function initChart(id, option) {
+  var el = document.getElementById(id);
+  if (!el) return null;
+  var ch = echarts.init(el);
+  ch.setOption(option);
+  _charts.push(ch);
+  return ch;
+}
+window.addEventListener('resize', function() {
+  _charts.forEach(function(ch) { try { ch.resize(); } catch(e) {} });
+});
+
+/* ═══ Tab 切换 ═══ */
+function switchTab(idx) {
+  document.querySelectorAll('.rpt-tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.rpt-tab-content').forEach(function(c, i) {
+    c.classList.toggle('active', i === idx);
+  });
+  setTimeout(function() {
+    _charts.forEach(function(ch) { try { ch.resize(); } catch(e) {} });
+  }, 100);
+}
+
+/* ═══ Chart: 架构关系图 ═══ */
+initChart('chart-arch', {
+  tooltip: { trigger: 'item' },
+  series: [{
+    type: 'graph',
+    layout: 'none',
+    symbolSize: 60,
+    roam: false,
+    label: { show: true, fontSize: 11, color: '#fff', fontWeight: 'bold' },
+    edgeSymbol: ['none', 'arrow'],
+    edgeSymbolSize: [0, 10],
+    lineStyle: { width: 2, curveness: 0.1 },
+    data: [
+      { name: 'meta\n(母Skill)', x: 300, y: 80, symbolSize: 80, itemStyle: { color: '#051C2C' } },
+      { name: 'financial-\nanalyzer', x: 300, y: 250, symbolSize: 70, itemStyle: { color: '#5B9BD5' } },
+      { name: '知识库\nv2.6.1', x: 500, y: 250, symbolSize: 55, itemStyle: { color: '#70AD47' } },
+      { name: 'client_rules\n(你的规则)', x: 100, y: 160, symbolSize: 55, itemStyle: { color: '#E67E22' } },
+      { name: 'MinerU\n解析', x: 500, y: 80, symbolSize: 50, itemStyle: { color: '#A5A5A5' } },
+      { name: '多源下载', x: 100, y: 80, symbolSize: 50, itemStyle: { color: '#A5A5A5' } },
+      { name: '分析报告\n.md', x: 300, y: 380, symbolSize: 55, itemStyle: { color: '#C0392B' } },
+      { name: '数据\n底稿', x: 500, y: 380, symbolSize: 55, itemStyle: { color: '#FFC000' }, label: { color: '#333' } }
+    ],
+    links: [
+      { source: 'meta\n(母Skill)', target: 'financial-\nanalyzer', lineStyle: { color: '#051C2C' } },
+      { source: 'meta\n(母Skill)', target: 'client_rules\n(你的规则)', lineStyle: { color: '#E67E22' } },
+      { source: 'client_rules\n(你的规则)', target: 'financial-\nanalyzer', lineStyle: { color: '#E67E22', type: 'dashed' } },
+      { source: 'financial-\nanalyzer', target: '知识库\nv2.6.1', lineStyle: { color: '#70AD47' } },
+      { source: 'meta\n(母Skill)', target: 'MinerU\n解析', lineStyle: { color: '#A5A5A5' } },
+      { source: 'meta\n(母Skill)', target: '多源下载', lineStyle: { color: '#A5A5A5' } },
+      { source: 'financial-\nanalyzer', target: '分析报告\n.md', lineStyle: { color: '#C0392B' } },
+      { source: 'financial-\nanalyzer', target: '数据\n底稿', lineStyle: { color: '#FFC000' } }
+    ]
+  }]
+});
+
+/* ═══ Chart: Pipeline 流程图 ═══ */
+initChart('chart-pipeline', {
+  tooltip: { trigger: 'axis' },
+  grid: { left: 60, right: 40, top: 60, bottom: 40 },
+  xAxis: {
+    type: 'category',
+    data: ['阶段0\n初始化', '阶段1\n下载', '阶段2\nMinerU解析', '阶段3\n14Agent分析', '阶段4\n报告生成', '阶段5\n知识库更新'],
+    axisLabel: { fontSize: 11, interval: 0 },
+    axisTick: { show: false },
+    axisLine: { lineStyle: { color: '#ccc' } }
+  },
+  yAxis: {
+    type: 'value',
+    name: '耗时（分钟）',
+    nameTextStyle: { fontSize: 11 },
+    axisLabel: { fontSize: 11 },
+    splitLine: { lineStyle: { color: '#f0f0f0' } }
+  },
+  series: [{
+    type: 'bar',
+    data: [
+      { value: 2, itemStyle: { color: '#A5A5A5' } },
+      { value: 5, itemStyle: { color: '#5B9BD5' } },
+      { value: 15, itemStyle: { color: '#5B9BD5' } },
+      { value: 55, itemStyle: { color: '#051C2C' } },
+      { value: 25, itemStyle: { color: '#C0392B' } },
+      { value: 3, itemStyle: { color: '#70AD47' } }
+    ],
+    barWidth: '50%',
+    label: { show: true, position: 'top', fontSize: 11, formatter: '{c} min' }
+  }]
+});
+
+/* ═══ Chart: 知识库进化 ═══ */
+initChart('chart-knowledge', {
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['知识条目数', '分析深度评分'], top: 10, textStyle: { fontSize: 11 } },
+  grid: { left: 60, right: 60, top: 50, bottom: 40 },
+  xAxis: {
+    type: 'category',
+    data: ['v1.0\n首例', 'v1.5\n3例', 'v2.0\n5例', 'v2.3\n7例', 'v2.5\n9例', 'v2.6.1\n11例'],
+    axisLabel: { fontSize: 11 },
+    axisTick: { show: false },
+    axisLine: { lineStyle: { color: '#ccc' } }
+  },
+  yAxis: [
+    { type: 'value', name: '条目数', nameTextStyle: { fontSize: 11 }, splitLine: { lineStyle: { color: '#f0f0f0' } } },
+    { type: 'value', name: '深度评分', min: 0, max: 100, nameTextStyle: { fontSize: 11 }, splitLine: { show: false } }
+  ],
+  series: [
+    {
+      name: '知识条目数',
+      type: 'bar',
+      data: [45, 78, 120, 165, 210, 248],
+      itemStyle: { color: '#051C2C' },
+      barWidth: '40%'
+    },
+    {
+      name: '分析深度评分',
+      type: 'line',
+      yAxisIndex: 1,
+      data: [42, 55, 68, 76, 85, 91],
+      lineStyle: { color: '#C0392B', width: 2 },
+      itemStyle: { color: '#C0392B' },
+      symbol: 'circle',
+      symbolSize: 8
+    }
+  ]
+});
+</script>
+</body>
+</html>
