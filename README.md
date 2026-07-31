@@ -1,11 +1,23 @@
-# Financial Analyzer — 技术架构文档
+# Financial Analyzer — 技术架构手册
 
 > 作者：叶青 | 版本：v2.6.1 | 更新日期：2026-07-30
 
 Financial Analyzer 是一套 **14 Agent × 5 阶段** 的企业年报附注优先财务分析引擎，
 覆盖偿债能力、盈利运营、现金流杠杆、有息债务与融资成本全维度。
 
-本仓库开源其 **技术架构文档与使用教程**（HTML），Skill 源码本身不在此仓库中。
+本仓库开源其 **技术架构手册与使用教程**（HTML），Skill 源码本身不在此仓库中。
+
+## 🚀 一句 Prompt 获取 Skill
+
+在你的 AI Agent（WorkBuddy / VS Code Copilot / BondClaw 等）对话框中输入：
+
+```
+安装 meta-financial-analyzer skill
+```
+
+Agent 会自动完成下载、安装、依赖配置。安装后说"训练一个财务分析师"即可开始定制。
+
+也可以直接访问 [投研AI家园 · 技能商店](https://kmrhoavgygtv.sealosbja.site) 搜索安装。
 
 ## 📄 文档
 
@@ -15,6 +27,8 @@ Financial Analyzer 是一套 **14 Agent × 5 阶段** 的企业年报附注优�
 | [usage-guide.html](./usage-guide.html) | 分析师 / 信评研究员 | 手把手使用教程、Onboarding 定制、全流程实操 |
 
 直接用浏览器打开即可阅读（自包含 HTML，无外部依赖，ECharts 通过 CDN 加载）。
+
+**在线阅读**：https://kmrhoavgygtv.sealosbja.site/pages/tutorial-fa-architecture/
 
 ## 🏗️ 架构概览
 
